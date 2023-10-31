@@ -45,6 +45,10 @@ class Target:
         pygame.draw.circle(win, self.COLOR, (self.x, self.y), self.size * 0.6)
         pygame.draw.circle(win, self.SECOND_COLOR, (self.x, self.y), self.size * 0.4)
 
+    def collide(self, x, y):
+        dis = math.sqrt((self.x - x)**2 + (self.y - y)**2)
+        return dis <= self.size
+
 
 def draw(win, targets):  # need to clear the screen every single time we draw
     win.fill(BG_COLOR)
@@ -53,16 +57,25 @@ def draw(win, targets):  # need to clear the screen every single time we draw
         target.draw(win)
 
     pygame.display.update()
+
+
 #  we need an infinite loop while we run the game
 def main():
     run = True
     targets = []
     clock = pygame.time.Clock()
 
+    target_pressed = 0
+    clicks = 0
+    misses = 0
+    start_time = time.time()
+
     pygame.time.set_timer(TARGET_EVENT, TARGET_INCREMENT)
 
     while run:
         clock.tick(244)  # regulates the speed at which the while loop runs
+        click = False
+        mouse_pos = pygame.mouse.get_pos()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -74,11 +87,21 @@ def main():
                 y = random.randint(TARGET_PADDING, HEIGHT - TARGET_PADDING)
                 target = Target(x, y)
                 targets.append(target)
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                click = True
+                clicks += 1
+
         for target in targets:
             target.update()
 
             if target.size <= 0:  # removing targets that have reached 0
                 targets.remove(target)
+                misses += 1  # this means we weren't able to press the target in time
+
+            if click and target.collide(*mouse_pos):
+                targets.remove(target)
+                target_pressed += 1
 
         draw(WIN, targets)
 
